@@ -6,7 +6,7 @@ use biome_html_syntax::{
     HtmlSelfClosingElement,
 };
 use biome_module_graph::{
-    ImportTreeDisplay, ImportTreeNode, build_import_tree_for_html,
+    ImportTreeDisplay, ImportTreeNode, build_import_tree_for_html, is_same_css_class,
     traverse_import_tree_for_html_classes,
 };
 use biome_rowan::{AstNode, TextRange, TextSize};
@@ -134,7 +134,7 @@ impl Rule for NoUndeclaredClasses {
                 if step
                     .css_classes
                     .values()
-                    .any(|token| token.text() == class_name)
+                    .any(|token| is_same_css_class(token.text(), class_name))
                 {
                     found_class = true;
                     break;

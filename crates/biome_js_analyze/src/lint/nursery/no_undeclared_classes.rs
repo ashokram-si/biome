@@ -11,7 +11,7 @@ use biome_js_syntax::{
 use biome_languages::JsFileSource;
 use biome_module_graph::{
     ImportTreeDisplay, ImportTreeNode, build_import_tree_for_html, build_import_tree_for_js,
-    traverse_import_tree_for_classes, traverse_import_tree_for_html_classes,
+    is_same_css_class, traverse_import_tree_for_classes, traverse_import_tree_for_html_classes,
 };
 use biome_rowan::{AstNode, AstSeparatedList, TextRange, TextSize, declare_node_union};
 use biome_rule_options::no_undeclared_classes::NoUndeclaredClassesOptions;
@@ -149,7 +149,7 @@ impl Rule for NoUndeclaredClasses {
             let found_class = css_steps.iter().any(|step| {
                 step.css_classes
                     .values()
-                    .any(|c| c.text() == entry.name.as_ref())
+                    .any(|c| is_same_css_class(c.text(), entry.name.as_ref()))
             });
 
             if !found_class && let Some(module) = db.module_for_path(file_path) {
@@ -327,7 +327,7 @@ fn run_without_semantic(
         let found_class = css_steps.iter().any(|step| {
             step.css_classes
                 .values()
-                .any(|c| c.text() == entry.name.as_ref())
+                .any(|c| is_same_css_class(c.text(), entry.name.as_ref()))
         });
 
         if !found_class && let Some(module) = db.module_for_path(file_path) {

@@ -28,7 +28,8 @@ pub(crate) use visitor::CssModuleVisitor;
 /// scoped `<style scoped>` block are distinct entries in an [`IndexSet`].
 #[derive(Clone, Debug)]
 pub struct CssClassDefinition {
-    /// The name of the class.
+    /// The name of the class as the stylesheet spells it, escapes included (`foo\+bar`). Compare
+    /// it with markup through [`crate::is_same_css_class`].
     pub name: TokenText,
 
     /// The text range of the class name token (snippet-local for embedded styles).
@@ -177,8 +178,10 @@ pub struct CssModuleInfoInner {
     /// those inside nested rules and at-rules. Does not include classes inside
     /// `:global(...)` pseudo-class selectors.
     ///
-    /// Keys are class names (e.g., "header" from `.header`), values are the
-    /// `TextRange` of the class selector in the source file.
+    /// Keys are the `TextRange` of the class name in the source file, values
+    /// the name as the stylesheet spells it, escapes included (`header` from
+    /// `.header`, `foo\+bar` from `.foo\+bar`). Compare names with markup
+    /// through [`crate::is_same_css_class`].
     pub classes: IndexMap<TextRange, TokenText>,
 
     /// The Tailwind CSS configuration this file declares, without the files it

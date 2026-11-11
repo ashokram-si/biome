@@ -20,7 +20,8 @@ use std::rc::Rc;
 pub struct CssClassStep {
     /// The path of the CSS file discovered in this step
     pub css_path: Utf8PathBuf,
-    /// The CSS class names and their selector ranges found in this CSS file
+    /// The CSS class names and their selector ranges found in this CSS file. Names are source text,
+    /// escapes included: compare them through [`crate::is_same_css_class`].
     pub css_classes: IndexMap<TextRange, TokenText>,
 }
 

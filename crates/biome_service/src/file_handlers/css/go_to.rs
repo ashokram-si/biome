@@ -1,7 +1,7 @@
 use crate::file_handlers::ResolveDefinitionParams;
 use crate::workspace::{DefinitionReference, GoToDefinitionResult};
 use biome_css_semantic::db::css_semantic_model;
-use biome_css_syntax::CssClassSelector;
+use biome_css_syntax::{CssClassSelector, decode_css_identifier};
 use biome_fs::BiomePath;
 use biome_languages::LanguageDb;
 #[cfg(feature = "module_graph")]
@@ -56,7 +56,8 @@ pub(crate) fn resolve_definition(params: ResolveDefinitionParams) -> Option<GoTo
                     .filter_map(CssClassSelector::cast)
                 {
                     if let Ok(name) = class_sel.name()
-                        && name.syntax().text_trimmed().to_string() == *class_name
+                        && decode_css_identifier(&name.syntax().text_trimmed().to_string())
+                            == class_name.as_str()
                     {
                         let mut range = name.syntax().text_trimmed_range();
                         if let Some(offset) = diagnostic_offset {

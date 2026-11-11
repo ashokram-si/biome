@@ -10,7 +10,7 @@ use crate::{
     CssPropertyDefinition, ImportTreeNode, ModuleDb, ModuleGraphGeneration, ModuleInfo,
     ModuleInfoKind, TailwindStylesheet,
 };
-use biome_css_syntax::{TextRange, TextSize};
+use biome_css_syntax::{TextRange, TextSize, decode_css_identifier};
 use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::IndexMap;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -311,6 +311,13 @@ pub fn css_property_definitions<'db>(
         .collect()
 }
 
+/// Whether the class a CSS selector names as `defined` (its source text, escapes included:
+/// `foo\+bar`) is the class `name` that markup uses (`foo+bar`). CSS escapes are resolved first,
+/// so a class compares by its value, not by how the stylesheet spells it.
+pub fn is_same_css_class(defined: &str, name: &str) -> bool {
+    decode_css_identifier(defined) == name
+}
+
 /// Returns `true` if the given CSS `class_name` is referenced in any
 /// JS or HTML file that transitively imports `css_path`.
 #[salsa::tracked(returns(copy))]
@@ -343,7 +350,7 @@ pub fn find_css_class_definition<'db>(
     // 1. Check inline style classes in HTML-like files (carry content_offset)
     if let ModuleInfoKind::Html(html_info) = module.kind(db) {
         for class_def in &html_info.style_classes {
-            if class_def.name.text() == symbol.name(db) {
+            if is_same_css_class(class_def.name.text(), &symbol.name(db)) {
                 result.push((
                     symbol.module(db).path(db).to_path_buf(),
                     class_def.range,
@@ -676,7 +683,7 @@ fn search_css_class_transitive<'db>(
         };
 
         for (range, token) in css_info.classes.iter() {
-            if token.text() == symbol.name(db) {
+            if is_same_css_class(token.text(), &symbol.name(db)) {
                 result.push((current.path(db).to_path_buf(), *range, None));
             }
         }

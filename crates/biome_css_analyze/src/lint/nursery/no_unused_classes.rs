@@ -2,6 +2,7 @@ use crate::services::module_graph::CssModuleGraph;
 use biome_analyze::{Rule, RuleDiagnostic, RuleDomain, context::RuleContext, declare_lint_rule};
 use biome_console::markup;
 use biome_css_syntax::CssClassSelector;
+use biome_css_syntax::decode_css_identifier;
 use biome_css_syntax::selector_ext::AnyCssPseudoClassFunctionSelector;
 use biome_module_graph::{SymbolFromModuleInfo, is_class_referenced_by_importers};
 use biome_rowan::AstNode;
@@ -85,9 +86,11 @@ impl Rule for NoUnusedClasses {
         let db = ctx.db();
         let module = db.module_for_path(ctx.file_path())?;
 
+        // Markup uses the class's value: `.foo\+bar` is the class `foo+bar`.
+        let class_name = decode_css_identifier(class_name.text_trimmed());
         if is_class_referenced_by_importers(
             db,
-            SymbolFromModuleInfo::new(db, class_name.token_text_trimmed().text(), module),
+            SymbolFromModuleInfo::new(db, class_name.as_ref(), module),
         ) {
             return None;
         }

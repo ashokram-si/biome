@@ -6601,6 +6601,58 @@ fn go_to_definition_html_class_to_css() {
     assert_eq!(range, &TextRange::new(TextSize::from(1), TextSize::from(7)));
 }
 
+/// A class declared with a CSS escape (`.foo\+bar`) is the class `foo+bar` the markup uses (#13078).
+#[test]
+fn go_to_definition_html_class_to_escaped_css_class() {
+    const CSS_CONTENT: &str = ".foo\\+bar { margin: 0; }\n";
+    const HTML_CONTENT: &str =
+        "<link rel=\"stylesheet\" href=\"./styles.css\" />\n<div class=\"foo+bar\">Hello</div>\n";
+
+    let fs = MemoryFileSystem::default();
+    fs.insert(
+        Utf8PathBuf::from("/project/styles.css"),
+        CSS_CONTENT.as_bytes(),
+    );
+    fs.insert(
+        Utf8PathBuf::from("/project/index.html"),
+        HTML_CONTENT.as_bytes(),
+    );
+
+    let (workspace, project_key) = setup_workspace_and_open_project(fs, "/");
+
+    workspace
+        .scan_project(ScanProjectParams {
+            project_key,
+            watch: false,
+            force: false,
+            scan_kind: ScanKind::TypeAware,
+            verbose: false,
+        })
+        .unwrap();
+
+    let class_value_start = HTML_CONTENT.find("\"foo+bar\"").unwrap() + 1;
+    let cursor_range = TextRange::new(
+        TextSize::from(class_value_start as u32),
+        TextSize::from(class_value_start as u32),
+    );
+
+    let result = workspace
+        .go_to_definition(GoToDefinitionParams {
+            project_key,
+            enabled: true,
+            path: BiomePath::new("/project/index.html"),
+            cursor_range,
+        })
+        .unwrap();
+
+    let definition = result.expect("should resolve the HTML class to the escaped CSS class");
+    assert_eq!(definition.matches.len(), 1);
+    let (path, range) = &definition.matches[0];
+    assert_eq!(path, &BiomePath::new("/project/styles.css"));
+    // `foo\+bar` in `.foo\+bar` spans offsets 1..9
+    assert_eq!(range, &TextRange::new(TextSize::from(1), TextSize::from(9)));
+}
+
 #[test]
 fn go_to_definition_html_class_inline_style() {
     const HTML_CONTENT: &str =
@@ -6669,6 +6721,64 @@ fn go_to_definition_html_class_inline_style() {
             TextSize::from(expected_end as u32),
         ),
         "range should be in parent document coordinates"
+    );
+}
+
+/// An inline `<style>` class declared with a CSS escape (`.foo\+bar`) is the class `foo+bar` (#13078).
+/// The project isn't scanned, so the open document's own stylesheet answers, not the module graph.
+#[test]
+fn go_to_definition_html_class_to_escaped_inline_style() {
+    const HTML_CONTENT: &str =
+        "<style>.foo\\+bar { padding: 1rem; }</style>\n<div class=\"foo+bar\">Content</div>\n";
+
+    let fs = MemoryFileSystem::default();
+    fs.insert(
+        Utf8PathBuf::from("/project/index.html"),
+        HTML_CONTENT.as_bytes(),
+    );
+
+    let (workspace, project_key) = setup_workspace_and_open_project(fs, "/");
+
+    workspace
+        .open_file(OpenFileParams {
+            project_key,
+            path: BiomePath::new("/project/index.html"),
+            content: FileContent::FromServer,
+            document_file_source: None,
+            persist_node_cache: false,
+            inline_config: None,
+            editor_features: None,
+        })
+        .unwrap();
+
+    let class_value_start = HTML_CONTENT.find("\"foo+bar\"").unwrap() + 1;
+    let cursor_range = TextRange::new(
+        TextSize::from(class_value_start as u32),
+        TextSize::from(class_value_start as u32),
+    );
+
+    let result = workspace
+        .go_to_definition(GoToDefinitionParams {
+            project_key,
+            enabled: true,
+            path: BiomePath::new("/project/index.html"),
+            cursor_range,
+        })
+        .unwrap();
+
+    let definition =
+        result.expect("should resolve the HTML class to the escaped inline style class");
+    assert_eq!(definition.matches.len(), 1);
+    let (path, range) = &definition.matches[0];
+    assert_eq!(path, &BiomePath::new("/project/index.html"));
+    // `foo\+bar` starts one past the `.` after `<style>` and is 8 characters long
+    let expected_start = HTML_CONTENT.find("<style>").unwrap() + "<style>".len() + 1;
+    assert_eq!(
+        range,
+        &TextRange::new(
+            TextSize::from(expected_start as u32),
+            TextSize::from((expected_start + 8) as u32),
+        )
     );
 }
 

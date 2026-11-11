@@ -1,0 +1,9 @@
+/* `.foo\+baz` is the class `foo+baz`, which nothing uses */
+.foo\+baz {
+	color: blue;
+}
+
+/* `.used\+class` is used */
+.used\+class {
+	color: red;
+}

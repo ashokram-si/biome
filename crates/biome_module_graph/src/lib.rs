@@ -38,9 +38,9 @@ pub use db::queries::{
     infer_expression_function_returns_promise, infer_expression_is_array_of_promises,
     infer_expression_is_promise, infer_expression_type, infer_local_type, infer_module_types,
     infer_module_types_bottom_up, is_array_of_promise_type, is_class_referenced_by_importers,
-    is_promise_type, js_module_sccs, module_dependencies, normalize_type, resolve_callable_type,
-    tailwind_stylesheet, transitive_importers_of, traverse_import_tree_for_classes,
-    traverse_import_tree_for_html_classes,
+    is_promise_type, is_same_css_class, js_module_sccs, module_dependencies, normalize_type,
+    resolve_callable_type, tailwind_stylesheet, transitive_importers_of,
+    traverse_import_tree_for_classes, traverse_import_tree_for_html_classes,
 };
 pub use db::{ModuleDb, ModuleGraphGeneration, ResolverDb, TypeDb, module_for_key};
 pub use diagnostics::ModuleDiagnostic;

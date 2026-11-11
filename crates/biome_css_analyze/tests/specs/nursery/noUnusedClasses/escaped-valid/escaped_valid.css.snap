@@ -1,0 +1,26 @@
+---
+source: crates/biome_css_analyze/tests/spec_tests.rs
+expression: escaped_valid.css
+---
+# Input
+```css
+/* should not generate diagnostics */
+
+/* Escaped class names are matched by their value (#13078). */
+
+/* `.foo\+bar` is the class `foo+bar` */
+.foo\+bar {
+	color: blue;
+}
+
+/* A hex escape: `.a\31 b` is the class `a1b` */
+.a\31 b {
+	color: red;
+}
+
+/* A class that starts with a digit: `.\31 23` is the class `123` */
+.\31 23 {
+	color: green;
+}
+
+```

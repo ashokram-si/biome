@@ -1,0 +1,7 @@
+.plain {
+	color: red;
+}
+
+.foo\+bar {
+	color: blue;
+}
